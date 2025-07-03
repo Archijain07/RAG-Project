@@ -4,6 +4,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.schema import Document
 from chunking import Chunker
 from chroma_service import ChromaHandler
+from tqdm import tqdm
 
 def download_pdf(url, save_path):
     try:
@@ -17,15 +18,20 @@ def download_pdf(url, save_path):
         print(f"❌ Failed to download PDF: {e}")
         return False
 
-def extract_text_from_pdf_page(pdf_path, page_num):
+def extract_text_from_pdf_page(pdf_path):
+    """
+    Extract text from a PDF file.
+
+    Args:
+        pdf_path (str): The path to the PDF file.
+
+    Returns:
+        list[Document]: A list of Document objects, each representing a page in the PDF.
+    """
     loader = PyPDFLoader(pdf_path)
     documents = loader.load()
 
-    if page_num < 1 or page_num > len(documents):
-        print(f"❌ Invalid page number. The PDF has {len(documents)} pages.")
-        return None
-
-    return documents[page_num - 1].page_content
+    return documents
 
 def apply_chunking(chunker, text, chunk_type):
     if chunk_type == "sentence":
@@ -66,11 +72,22 @@ def run_ingestion(url, chunk_type="recursive", page_range=(1, 3)):
     chunker = Chunker()
     handler = ChromaHandler()
     total_docs = []
+    extracted_pdf=extract_text_from_pdf_page(save_path)
+    if page_range is None:
+        page_nums = range(1, len(extracted_pdf) + 1)
+    else:
+        page_nums = range(page_range[0], page_range[1] + 1)
 
-    for page_num in range(page_range[0], page_range[1] + 1):
+    if page_range is None:
+         page_nums = range(1, len(extracted_pdf) + 1)
+    else:
+         page_nums = range(page_range[0], page_range[1] + 1)
+
+    for page_num in tqdm(page_nums):
+
+
         print(f"\n📄 Processing Page {page_num}...")
-        text = extract_text_from_pdf_page(save_path, page_num)
-
+        text = extracted_pdf[page_num-1].page_content
         if text:
             chunks = apply_chunking(chunker, text, chunk_type)
             if chunks:

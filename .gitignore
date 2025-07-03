@@ -1,3 +1,15 @@
 venv/
 __pycache__/
 *.pyc
+
+# Ignore Chroma DB folders
+chroma_db/*
+chroma_langchain_db/*
+
+# Ignore PDF and Word document files
+*.pdf
+*.doc
+*.docx
+
+# Ignore environment variable files
+.env
