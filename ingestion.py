@@ -5,6 +5,7 @@ from langchain.schema import Document
 from chunking import Chunker
 from chroma_service import ChromaHandler
 from tqdm import tqdm
+import tempfile
 
 def download_pdf(url, save_path):
     try:
@@ -62,30 +63,42 @@ def parse_page_range_input(page_input):
         print("❌ Invalid page range format. Use format like 1-3.")
         return None
 
-def run_ingestion(url, chunk_type="recursive", page_range=(1, 3)):
-    filename = os.path.basename(url)
-    save_path = os.path.join(".", filename)
+def run_ingestion(url=None, file_bytes=None, chunk_type="recursive", page_range=(1, 3)):
+    """
+    Ingests a PDF from a URL or from uploaded file bytes.
 
-    if not download_pdf(url, save_path):
+    Args:
+        url (str, optional): URL to the PDF file.
+        file_bytes (bytes, optional): PDF file content as bytes.
+        chunk_type (str): Chunking strategy.
+        page_range (tuple or None): Page range to process.
+    """
+    tmp_dir = tempfile.gettempdir()
+    if url:
+        filename = os.path.basename(url)
+        save_path = os.path.join(tmp_dir, filename)
+        if not download_pdf(url, save_path):
+            return
+    elif file_bytes:
+        filename = "uploaded.pdf"
+        save_path = os.path.join(tmp_dir, filename)
+        with open(save_path, "wb") as f:
+            f.write(file_bytes)
+        print(f"✅ PDF file uploaded and saved to: {save_path}")
+    else:
+        print("❌ No PDF source provided.")
         return
 
     chunker = Chunker()
     handler = ChromaHandler()
     total_docs = []
-    extracted_pdf=extract_text_from_pdf_page(save_path)
+    extracted_pdf = extract_text_from_pdf_page(save_path)
     if page_range is None:
         page_nums = range(1, len(extracted_pdf) + 1)
     else:
         page_nums = range(page_range[0], page_range[1] + 1)
 
-    if page_range is None:
-         page_nums = range(1, len(extracted_pdf) + 1)
-    else:
-         page_nums = range(page_range[0], page_range[1] + 1)
-
     for page_num in tqdm(page_nums):
-
-
         print(f"\n📄 Processing Page {page_num}...")
         text = extracted_pdf[page_num-1].page_content
         if text:

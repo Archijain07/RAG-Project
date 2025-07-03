@@ -10,11 +10,11 @@ st.title("📄 PDF Question Answering")
 st.write("Ingest a PDF and ask questions from it using a semantic search + LLM pipeline.")
 
 # --- Ingestion Section ---
-# --- Ingestion Section ---
 st.subheader("Step 1: Ingest a PDF")
 
 with st.form("ingest_form"):
     url = st.text_input("Enter PDF URL", placeholder="https://example.com/sample.pdf")
+    uploaded_file = st.file_uploader("Or upload a PDF file", type=["pdf"])
     chunk_type = st.selectbox("Select Chunking Method", ["recursive", "sentence", "word", "character"])
 
     all_pages = st.checkbox("Ingest entire PDF?")
@@ -26,11 +26,22 @@ with st.form("ingest_form"):
 
     if ingest_button:
         with st.spinner("Ingesting PDF..."):
-            response = requests.post(f"{API_URL}/ingest", json={
-                "url": url,
+            form_data = {
                 "chunk_type": chunk_type,
                 "page_range": page_range if page_range else "all"
-            })
+            }
+            if url:
+                form_data["url"] = url
+
+            files = None
+            if uploaded_file is not None:
+                files = {"file": (uploaded_file.name, uploaded_file, "application/pdf")}
+
+            response = requests.post(
+                f"{API_URL}/ingest",
+                data=form_data,
+                files=files
+            )
             if response.status_code == 200 and "status" in response.json():
                 st.success(response.json()["status"])
             else:
