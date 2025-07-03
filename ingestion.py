@@ -129,14 +129,3 @@ def run_ingestion(url=None, file_bytes=None, chunk_type="recursive", page_range=
         print(f"\n🎉 Ingestion Complete: {len(total_docs)} chunks from {filename} ingested to ChromaDB!")
     else:
         print("⚠️ No content was ingested.")
-
-if __name__ == "__main__":
-    url = input("🔗 Enter the URL of the PDF to download and ingest: ").strip()
-    chunk_type = input("🔀 Enter chunking type (sentence, word, character, recursive, semantic): ").strip().lower()
-    page_input = input("📄 Enter page range to extract (e.g., 1-3): ").strip()
-    page_range = parse_page_range_input(page_input)
-
-    if page_range:
-        run_ingestion(url, chunk_type=chunk_type, page_range=page_range)
-
-
